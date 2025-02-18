@@ -8,27 +8,39 @@ $success = '';
 // Gestion de l'inscription
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $username = $_POST['reg_username'];
+    $email = $_POST['reg_email'];
     $password = $_POST['reg_password'];
     $confirm_password = $_POST['confirm_password'];
 
     if ($password !== $confirm_password) {
         $error = "Les mots de passe ne correspondent pas";
     } else {
-        $check_query = "SELECT username FROM users WHERE username = ?";
+        // Vérification de l'unicité du nom d'utilisateur et de l'email
+        $check_query = "SELECT username, email FROM users WHERE username = ? OR email = ?";
         $check_stmt = $mysqli->prepare($check_query);
-        $check_stmt->bind_param("s", $username);
+        $check_stmt->bind_param("ss", $username, $email);
         $check_stmt->execute();
+        $result = $check_stmt->get_result();
 
-        if ($check_stmt->get_result()->num_rows > 0) {
-            $error = "Ce nom d'utilisateur existe déjà";
+        if ($result->num_rows > 0) {
+            $existing = $result->fetch_assoc();
+            if ($existing['username'] === $username) {
+                $error = "Ce nom d'utilisateur existe déjà";
+            } else {
+                $error = "Cette adresse email est déjà utilisée";
+            }
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $insert_query = "INSERT INTO users (username, password) VALUES (?, ?)";
+            $insert_query = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
             $insert_stmt = $mysqli->prepare($insert_query);
-            $insert_stmt->bind_param("ss", $username, $hashed_password);
+            $insert_stmt->bind_param("sss", $username, $email, $hashed_password);
 
             if ($insert_stmt->execute()) {
-                $success = "Inscription réussie ! Vous pouvez maintenant vous connecter";
+                // Connexion automatique après inscription
+                $_SESSION['user_id'] = $mysqli->insert_id;
+                $_SESSION['username'] = $username;
+                header('Location: dashboard.php');
+                exit();
             }
         }
     }
@@ -36,12 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 
 // Gestion de la connexion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    $login = $_POST['login_username']; // Peut être username ou email
+    $password = $_POST['login_password'];
 
-    $query = "SELECT * FROM users WHERE username = ?";
+    $query = "SELECT * FROM users WHERE username = ? OR email = ?";
     $stmt = $mysqli->prepare($query);
-    $stmt->bind_param("s", $username);
+    $stmt->bind_param("ss", $login, $login);
     $stmt->execute();
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
@@ -52,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         header('Location: dashboard.php');
         exit();
     } else {
-        $error = "Nom d'utilisateur ou mot de passe incorrect";
+        $error = "Identifiants incorrects";
     }
 }
 ?>
@@ -92,11 +104,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         .form-group {
             margin-bottom: 15px;
         }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
         input {
             width: 100%;
             padding: 8px;
             margin-top: 5px;
             box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         button {
             width: 100%;
@@ -104,28 +122,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             background: #007bff;
             color: white;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
         }
         button:hover {
             background: #0056b3;
         }
         .error {
-            color: red;
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
             margin-bottom: 10px;
         }
         .success {
-            color: green;
+            color: #28a745;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
             margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 <?php if ($error): ?>
-    <div class="error"><?php echo $error; ?></div>
+    <div class="error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
 <?php if ($success): ?>
-    <div class="success"><?php echo $success; ?></div>
+    <div class="success"><?php echo htmlspecialchars($success); ?></div>
 <?php endif; ?>
 
 <div class="tabs">
@@ -137,13 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 <div id="login" class="form-container active">
     <form method="POST">
         <div class="form-group">
-            <label>Nom d'utilisateur</label>
-            <input type="text" name="username" required>
+            <label>Nom d'utilisateur ou Email</label>
+            <input type="text" name="login_username" required>
         </div>
 
         <div class="form-group">
             <label>Mot de passe</label>
-            <input type="password" name="password" required>
+            <input type="password" name="login_password" required>
         </div>
 
         <button type="submit" name="login">Se connecter</button>
@@ -159,8 +184,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         </div>
 
         <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="reg_email" required>
+        </div>
+
+        <div class="form-group">
             <label>Mot de passe</label>
-            <input type="password" name="reg_password" required>
+            <input type="password" name="reg_password" required
+                   minlength="6" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}"
+                   title="Le mot de passe doit contenir au moins 6 caractères, dont une majuscule, une minuscule et un chiffre">
         </div>
 
         <div class="form-group">

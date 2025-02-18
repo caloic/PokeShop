@@ -2,7 +2,8 @@
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,  -- Pour le hash bcrypt
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
     solde DECIMAL(10,2) DEFAULT 0.00,
     avatar VARCHAR(255),
     role ENUM('user', 'admin') DEFAULT 'user',

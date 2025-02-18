@@ -21,7 +21,9 @@ try {
 }
 
 // Pour tester la connexion
+/*
 if (isset($mysqli)) {
     echo 'Connexion réussie à la base de donnée';
 }
+*/
 ?>
