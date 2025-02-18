@@ -1,15 +1,16 @@
 <?php
 require_once '../config.php';
+require_once '../auth_check.php';
 session_start();
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../index.php');
+    header('Location: ../login.php');
     exit();
 }
 
 if (!isset($_GET['id'])) {
-    header('Location: ../dashboard.php');
+    header('Location: ../index.php');
     exit();
 }
 
@@ -36,13 +37,13 @@ $stmt->execute();
 $article = $stmt->get_result()->fetch_assoc();
 
 if (!$article) {
-    header('Location: ../dashboard.php');
+    header('Location: ../index.php');
     exit();
 }
 
 // Vérifier si l'utilisateur est autorisé à modifier
 if ($article['user_id'] !== $_SESSION['user_id'] && $user_role !== 'admin') {
-    header('Location: ../dashboard.php');
+    header('Location: ../index.php');
     exit();
 }
 
@@ -75,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $mysqli->commit();
             $_SESSION['success'] = "Article supprimé avec succès";
-            header('Location: ../dashboard.php');
+            header('Location: ../index.php');
             exit();
 
         } catch (Exception $e) {
@@ -115,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $mysqli->commit();
             $_SESSION['success'] = "Article modifié avec succès";
-            header('Location: ../dashboard.php');
+            header('Location: ../index.php');
             exit();
 
         } catch (Exception $e) {
@@ -244,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container">
     <div class="header">
         <h1>Modifier l'article</h1>
-        <a href="../dashboard.php" class="btn back-btn">Retour au dashboard</a>
+        <a href="../index.php" class="btn back-btn">Retour au dashboard</a>
     </div>
 
     <?php if (isset($_SESSION['error'])): ?>

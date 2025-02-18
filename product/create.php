@@ -1,10 +1,11 @@
 <?php
 require_once '../config.php';
+require_once '../auth_check.php';
 session_start();
 
 // Vérifier si l'utilisateur est connecté et est admin
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../index.php');
+    header('Location: ../login.php');
     exit();
 }
 
@@ -45,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $mysqli->commit();
         $_SESSION['success'] = "Article créé avec succès";
-        header('Location: ../dashboard.php');
+        header('Location: ../index.php');
         exit();
 
     } catch (Exception $e) {
@@ -158,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container">
     <div class="header">
         <h1>Créer un nouvel article</h1>
-        <a href="../dashboard.php" class="btn back-btn">Retour au dashboard</a>
+        <a href="../index.php" class="btn back-btn">Retour au dashboard</a>
     </div>
 
     <?php if (isset($_SESSION['error'])): ?>

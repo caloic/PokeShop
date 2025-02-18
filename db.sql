@@ -63,3 +63,7 @@ CREATE TABLE commande_articles (
     FOREIGN KEY (commande_id) REFERENCES commandes(id),
     FOREIGN KEY (article_id) REFERENCES articles(id)
 );
+
+--Ajout de la colonne user_id dans la table articles
+ALTER TABLE articles ADD COLUMN user_id INT;
+ALTER TABLE articles ADD FOREIGN KEY (user_id) REFERENCES users(id);

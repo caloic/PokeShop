@@ -1,10 +1,11 @@
 <?php
 require_once 'config.php';
+require_once 'auth_check.php';
 session_start();
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: login.php');
     exit();
 }
 
@@ -220,7 +221,7 @@ $total = 0;
 <?php endif; ?>
 
 <div class="header">
-    <a href="dashboard.php" class="back-to-shop">← Retour aux articles</a>
+    <a href="index.php" class="back-to-shop">← Retour aux articles</a>
     <h1>Mon Panier</h1>
 </div>
 
@@ -273,7 +274,7 @@ $total = 0;
     <div class="cart-container empty-cart">
         <h2>Votre panier est vide</h2>
         <p>Retournez à la boutique pour ajouter des articles</p>
-        <a href="dashboard.php" class="update-btn">Retour à la boutique</a>
+        <a href="index.php" class="update-btn">Retour à la boutique</a>
     </div>
 <?php endif; ?>
 </body>

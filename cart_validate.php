@@ -4,13 +4,13 @@ session_start();
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: login.php');
     exit();
 }
 
 // Vérifier si un order_id est fourni
 if (!isset($_GET['order_id'])) {
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -29,7 +29,7 @@ $stmt->execute();
 $order = $stmt->get_result()->fetch_assoc();
 
 if (!$order) {
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -149,7 +149,7 @@ $items = $stmt->get_result();
     <?php endif; ?>
 
     <div style="margin-top: 30px">
-        <a href="dashboard.php" class="back-btn">Retour à la boutique</a>
+        <a href="index.php" class="back-btn">Retour à la boutique</a>
     </div>
 </div>
 </body>

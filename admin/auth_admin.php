@@ -1,10 +1,5 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../index.php');
-    exit();
-}
+require_once '../auth_check.php'; // Vérifie d'abord la connexion
 
 // Vérifier si l'utilisateur est admin
 $admin_check = "SELECT role FROM users WHERE id = ?";
@@ -15,7 +10,7 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 
 if (!$user || $user['role'] !== 'admin') {
-    header('Location: ../dashboard.php');
+    header('Location: ../index.php');
     exit();
 }
 ?>

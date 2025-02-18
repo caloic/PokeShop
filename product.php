@@ -4,7 +4,7 @@ session_start();
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: login.php');
     exit();
 }
 
@@ -27,7 +27,7 @@ $article = $result->fetch_assoc();
 
 // Rediriger si l'article n'existe pas
 if (!$article) {
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -160,7 +160,7 @@ $cart_count = $cart_result->fetch_assoc()['total_items'] ?? 0;
 </head>
 <body>
 <div class="header">
-    <a href="dashboard.php" class="back-link">← Retour aux articles</a>
+    <a href="index.php" class="back-link">← Retour aux articles</a>
     <a href="cart.php" class="cart-info">
         Panier <span class="cart-count"><?php echo $cart_count; ?></span>
     </a>

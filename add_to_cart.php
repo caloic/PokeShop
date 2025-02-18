@@ -1,17 +1,18 @@
 <?php
 require_once 'config.php';
+require_once 'auth_check.php';
 session_start();
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: login.php');
     exit();
 }
 
 // Vérifier si un article_id a été envoyé
 if (!isset($_POST['article_id'])) {
     $_SESSION['error'] = "Aucun article sélectionné";
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -31,13 +32,13 @@ $article = $result->fetch_assoc();
 
 if (!$article) {
     $_SESSION['error'] = "Article introuvable";
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit();
 }
 
 if ($article['quantite'] <= 0) {
     $_SESSION['error'] = "Article en rupture de stock";
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -56,7 +57,7 @@ if ($result->num_rows > 0) {
     // Vérifier si la nouvelle quantité est disponible en stock
     if ($new_quantity > $article['quantite']) {
         $_SESSION['error'] = "Stock insuffisant";
-        header('Location: dashboard.php');
+        header('Location: index.php');
         exit();
     }
 
@@ -76,6 +77,6 @@ if ($result->num_rows > 0) {
 $_SESSION['success'] = "Article ajouté au panier";
 
 // Rediriger vers le dashboard
-header('Location: dashboard.php');
+header('Location: index.php');
 exit();
 ?>

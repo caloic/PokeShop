@@ -1,9 +1,10 @@
 <?php
 require_once 'config.php';
+require_once 'auth_check.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: login.php');
     exit();
 }
 
@@ -19,7 +20,7 @@ $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
 if (!$user) {
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -293,7 +294,7 @@ if ($is_own_profile) {
 <div class="container">
     <div class="header">
         <h1><?php echo $is_own_profile ? "Mon compte" : "Profil de " . htmlspecialchars($user['username']); ?></h1>
-        <a href="dashboard.php" class="btn back-btn">Retour au dashboard</a>
+        <a href="index.php" class="btn back-btn">Retour au dashboard</a>
     </div>
 
     <?php if (isset($_SESSION['success'])): ?>

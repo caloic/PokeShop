@@ -117,7 +117,7 @@ $stats = [
 <div class="container">
     <div class="header">
         <h1>Panneau d'administration</h1>
-        <a href="../dashboard.php" class="back-btn">Retour au site</a>
+        <a href="../index.php" class="back-btn">Retour au site</a>
     </div>
 
     <div class="stats-grid">

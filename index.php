@@ -2,226 +2,375 @@
 require_once 'config.php';
 session_start();
 
-$error = '';
-$success = '';
+// Vérifie si l'utilisateur est connecté (pour l'affichage conditionnel)
+$is_logged_in = isset($_SESSION['user_id']);
 
-// Gestion de l'inscription
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
-    $username = $_POST['reg_username'];
-    $email = $_POST['reg_email'];
-    $password = $_POST['reg_password'];
-    $confirm_password = $_POST['confirm_password'];
+// Si l'utilisateur est connecté, récupérer ses informations
+if ($is_logged_in) {
+    // Récupérer le nombre d'articles dans le panier
+    $cart_query = "SELECT SUM(quantite) as total_items FROM carts WHERE user_id = ?";
+    $cart_stmt = $mysqli->prepare($cart_query);
+    $cart_stmt->bind_param("i", $_SESSION['user_id']);
+    $cart_stmt->execute();
+    $cart_result = $cart_stmt->get_result();
+    $cart_count = $cart_result->fetch_assoc()['total_items'] ?? 0;
 
-    if ($password !== $confirm_password) {
-        $error = "Les mots de passe ne correspondent pas";
-    } else {
-        // Vérification de l'unicité du nom d'utilisateur et de l'email
-        $check_query = "SELECT username, email FROM users WHERE username = ? OR email = ?";
-        $check_stmt = $mysqli->prepare($check_query);
-        $check_stmt->bind_param("ss", $username, $email);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            $existing = $result->fetch_assoc();
-            if ($existing['username'] === $username) {
-                $error = "Ce nom d'utilisateur existe déjà";
-            } else {
-                $error = "Cette adresse email est déjà utilisée";
-            }
-        } else {
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $insert_query = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
-            $insert_stmt = $mysqli->prepare($insert_query);
-            $insert_stmt->bind_param("sss", $username, $email, $hashed_password);
-
-            if ($insert_stmt->execute()) {
-                // Connexion automatique après inscription
-                $_SESSION['user_id'] = $mysqli->insert_id;
-                $_SESSION['username'] = $username;
-                header('Location: dashboard.php');
-                exit();
-            }
-        }
-    }
+    // Récupérer le rôle de l'utilisateur
+    $role_query = "SELECT role FROM users WHERE id = ?";
+    $role_stmt = $mysqli->prepare($role_query);
+    $role_stmt->bind_param("i", $_SESSION['user_id']);
+    $role_stmt->execute();
+    $user_role = $role_stmt->get_result()->fetch_assoc()['role'];
 }
 
-// Gestion de la connexion
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    $login = $_POST['login_username']; // Peut être username ou email
-    $password = $_POST['login_password'];
-
-    $query = "SELECT * FROM users WHERE username = ? OR email = ?";
-    $stmt = $mysqli->prepare($query);
-    $stmt->bind_param("ss", $login, $login);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        header('Location: dashboard.php');
-        exit();
-    } else {
-        $error = "Identifiants incorrects";
-    }
-}
+// Récupérer tous les articles avec les informations de l'auteur
+$query = "
+    SELECT articles.*, stocks.quantite, users.username as author, users.id as author_id, articles.user_id 
+    FROM articles 
+    LEFT JOIN stocks ON articles.id = stocks.article_id 
+    LEFT JOIN users ON articles.user_id = users.id
+    ORDER BY articles.date_publication DESC
+";
+$result = $mysqli->query($query);
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Connexion / Inscription</title>
+    <title>Boutique - Articles en vente</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
+            margin: 0;
             padding: 20px;
+            background-color: #f5f5f5;
         }
-        .tabs {
+
+        .header {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background: #f0f0f0;
-            border: none;
-            flex: 1;
-        }
-        .tab.active {
-            background: #007bff;
-            color: white;
-        }
-        .form-container {
-            display: none;
-        }
-        .form-container.active {
-            display: block;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: calc(100% - 30px);
+            max-width: 100%;
             box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 4px;
         }
-        button {
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .profile-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+
+        .profile-link:hover {
+            color: #3498db;
+        }
+
+        .cart-info {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 20px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .cart-count {
+            background-color: white;
+            color: #007bff;
+            padding: 2px 8px;
+            border-radius: 50%;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .article-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .article-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .article-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .article-title {
+            font-size: 1.2em;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .article-price {
+            font-weight: bold;
+            color: #2ecc71;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        .stock-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            z-index: 1;
+        }
+
+        .in-stock { background-color: #2ecc71; color: white; }
+        .low-stock { background-color: #f1c40f; color: black; }
+        .out-of-stock { background-color: #e74c3c; color: white; }
+
+        .admin-btn {
+            padding: 8px 15px;
+            background-color: #e67e22;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .admin-btn:hover {
+            background-color: #d35400;
+        }
+
+        .create-product-btn {
+            padding: 8px 15px;
+            background-color: #2ecc71;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .create-product-btn:hover {
+            background-color: #27ae60;
+        }
+
+        .login-btn, .logout-btn {
+            padding: 8px 15px;
+            background-color: #dc3545;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .login-btn:hover, .logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        .article-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .button-container {
+            width: 100%;
+        }
+
+        .add-to-cart-btn {
             width: 100%;
             padding: 10px;
-            background: #007bff;
+            background-color: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            text-align: center;
+            box-sizing: border-box;
+            display: inline-block;
         }
-        button:hover {
-            background: #0056b3;
+
+        .add-to-cart-btn:hover {
+            background-color: #0056b3;
         }
-        .error {
-            color: #dc3545;
-            background-color: #f8d7da;
+
+        .add-to-cart-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .article-author {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .article-author a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .article-author a:hover {
+            text-decoration: underline;
+        }
+
+        .article-description {
+            color: #666;
+            margin: 10px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .message {
             padding: 10px;
+            margin: 10px 0;
             border-radius: 4px;
-            margin-bottom: 10px;
         }
-        .success {
-            color: #28a745;
-            background-color: #d4edda;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
+
+        .error { background-color: #ffebee; color: #c62828; }
+        .success { background-color: #e8f5e9; color: #2e7d32; }
     </style>
 </head>
 <body>
-<?php if ($error): ?>
-    <div class="error"><?php echo htmlspecialchars($error); ?></div>
+<div class="header">
+    <div class="user-info">
+        <?php if ($is_logged_in): ?>
+            <span>Bienvenue, <a href="account.php" class="profile-link"><?php echo htmlspecialchars($_SESSION['username']); ?></a></span>
+            <a href="product/create.php" class="create-product-btn">Créer un article</a>
+            <?php if ($user_role === 'admin'): ?>
+                <a href="admin/index.php" class="admin-btn">Administration</a>
+            <?php endif; ?>
+            <a href="logout.php" class="logout-btn">Déconnexion</a>
+        <?php else: ?>
+            <a href="login.php" class="login-btn">Connexion / Inscription</a>
+        <?php endif; ?>
+    </div>
+    <?php if ($is_logged_in): ?>
+        <a href="cart.php" class="cart-info">
+            Panier <span class="cart-count"><?php echo $cart_count; ?></span>
+        </a>
+    <?php endif; ?>
+</div>
+
+<h1>Articles en vente</h1>
+
+<div class="articles-grid">
+    <?php while ($article = $result->fetch_assoc()): ?>
+        <div class="article-card">
+            <?php
+            $stockStatus = '';
+            $stockClass = '';
+            if ($article['quantite'] > 10) {
+                $stockStatus = 'En stock';
+                $stockClass = 'in-stock';
+            } elseif ($article['quantite'] > 0) {
+                $stockStatus = 'Stock faible';
+                $stockClass = 'low-stock';
+            } else {
+                $stockStatus = 'Rupture';
+                $stockClass = 'out-of-stock';
+            }
+            ?>
+
+            <span class="stock-status <?php echo $stockClass; ?>">
+                <?php echo $stockStatus; ?>
+            </span>
+
+            <div class="article-content">
+                <a href="product.php?id=<?php echo $article['id']; ?>&slug=<?php echo $article['slug']; ?>">
+                    <img src="<?php echo htmlspecialchars($article['image_url']); ?>"
+                         alt="<?php echo htmlspecialchars($article['nom']); ?>"
+                         class="article-image">
+                </a>
+
+                <h3 class="article-title"><?php echo htmlspecialchars($article['nom']); ?></h3>
+                <?php if ($article['author']): ?>
+                    <p class="article-author">
+                        Par <a href="account.php?id=<?php echo $article['author_id']; ?>">
+                            <?php echo htmlspecialchars($article['author']); ?>
+                        </a>
+                    </p>
+                <?php endif; ?>
+                <p class="article-price"><?php echo number_format($article['prix'], 2); ?> €</p>
+                <p class="article-description"><?php echo htmlspecialchars($article['description']); ?></p>
+            </div>
+
+            <div class="article-actions">
+                <?php if ($is_logged_in): ?>
+                    <?php if ($article['user_id'] == $_SESSION['user_id'] || $user_role === 'admin'): ?>
+                        <div class="button-container">
+                            <a href="product/edit.php?id=<?php echo $article['id']; ?>" class="add-to-cart-btn">
+                                Modifier l'article
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="button-container">
+                        <form action="add_to_cart.php" method="POST">
+                            <input type="hidden" name="article_id" value="<?php echo $article['id']; ?>">
+                            <button type="submit"
+                                    class="add-to-cart-btn"
+                                <?php echo ($article['quantite'] <= 0) ? 'disabled' : ''; ?>>
+                                <?php echo ($article['quantite'] > 0) ? 'Ajouter au panier' : 'Indisponible'; ?>
+                            </button>
+                        </form>
+                    </div>
+                <?php else: ?>
+                    <div class="button-container">
+                        <a href="login.php" class="add-to-cart-btn">Se connecter pour acheter</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endwhile; ?>
+</div>
+
+<?php if ($result->num_rows === 0): ?>
+    <p>Aucun article disponible pour le moment.</p>
 <?php endif; ?>
-
-<?php if ($success): ?>
-    <div class="success"><?php echo htmlspecialchars($success); ?></div>
-<?php endif; ?>
-
-<div class="tabs">
-    <button class="tab active" onclick="showTab('login')">Connexion</button>
-    <button class="tab" onclick="showTab('register')">Inscription</button>
-</div>
-
-<!-- Formulaire de connexion -->
-<div id="login" class="form-container active">
-    <form method="POST">
-        <div class="form-group">
-            <label>Nom d'utilisateur ou Email</label>
-            <input type="text" name="login_username" required>
-        </div>
-
-        <div class="form-group">
-            <label>Mot de passe</label>
-            <input type="password" name="login_password" required>
-        </div>
-
-        <button type="submit" name="login">Se connecter</button>
-    </form>
-</div>
-
-<!-- Formulaire d'inscription -->
-<div id="register" class="form-container">
-    <form method="POST">
-        <div class="form-group">
-            <label>Nom d'utilisateur</label>
-            <input type="text" name="reg_username" required>
-        </div>
-
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" name="reg_email" required>
-        </div>
-
-        <div class="form-group">
-            <label>Mot de passe</label>
-            <input type="password" name="reg_password" required
-                   minlength="6" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}"
-                   title="Le mot de passe doit contenir au moins 6 caractères, dont une majuscule, une minuscule et un chiffre">
-        </div>
-
-        <div class="form-group">
-            <label>Confirmer le mot de passe</label>
-            <input type="password" name="confirm_password" required>
-        </div>
-
-        <button type="submit" name="register">S'inscrire</button>
-    </form>
-</div>
-
-<script>
-    function showTab(tabName) {
-        // Cacher tous les formulaires
-        document.querySelectorAll('.form-container').forEach(form => {
-            form.classList.remove('active');
-        });
-
-        // Désactiver tous les onglets
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-
-        // Afficher le formulaire sélectionné
-        document.getElementById(tabName).classList.add('active');
-
-        // Activer l'onglet sélectionné
-        event.target.classList.add('active');
-    }
-</script>
 </body>
 </html>
