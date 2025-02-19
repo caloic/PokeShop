@@ -484,6 +484,28 @@ $result = $mysqli->query($query);
                 fill: #ff4444;
                 stroke: #ff4444;
             }
+
+            .sort-container {
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            .sort-select {
+                padding: 8px 12px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 14px;
+                cursor: pointer;
+                min-width: 200px;
+            }
+
+            .sort-select:focus {
+                outline: none;
+                border-color: #4169E1;
+                box-shadow: 0 0 0 2px rgba(65,105,225,0.1);
+            }
         </style>
     </head>
 <body>
@@ -561,6 +583,17 @@ $result = $mysqli->query($query);
 <main class="main-container">
     <h1 class="page-title">Articles en vente</h1>
 
+    <div class="sort-container">
+        <select id="sort-select" class="sort-select">
+            <option value="date_desc">Plus récents</option>
+            <option value="date_asc">Plus anciens</option>
+            <option value="price_asc">Prix croissant</option>
+            <option value="price_desc">Prix décroissant</option>
+            <option value="name_asc">Nom A-Z</option>
+            <option value="name_desc">Nom Z-A</option>
+        </select>
+    </div>
+
     <div class="articles-grid">
 <?php while ($article = $result->fetch_assoc()): ?>
     <?php
@@ -580,7 +613,7 @@ $result = $mysqli->query($query);
         $stockClass = 'out-of-stock';
     }
     ?>
-    <div class="article-card">
+    <div class="article-card" data-date="<?php echo $article['date_publication']; ?>">
     <?php if ($is_logged_in): ?>
         <button class="favorite-button <?php echo $is_in_wishlist ? 'active' : ''; ?>"
                 data-article-id="<?php echo $article['id']; ?>">
@@ -653,12 +686,14 @@ $result = $mysqli->query($query);
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Éléments de recherche
             const searchInput = document.getElementById('search-input');
             const articles = document.querySelectorAll('.article-card');
             const articlesGrid = document.querySelector('.articles-grid');
 
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase().trim();
+            // Fonction de recherche
+            function filterArticles() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
                 let hasResults = false;
 
                 articles.forEach(article => {
@@ -679,17 +714,76 @@ $result = $mysqli->query($query);
                         noResultsMessage = document.createElement('div');
                         noResultsMessage.className = 'no-articles';
                         noResultsMessage.innerHTML = `
-                        <h2>Aucun résultat trouvé</h2>
-                        <p>Essayez avec d'autres mots-clés</p>
-                    `;
+                    <h2>Aucun résultat trouvé</h2>
+                    <p>Essayez avec d'autres mots-clés</p>
+                `;
                         articlesGrid.appendChild(noResultsMessage);
                     }
                 } else if (noResultsMessage) {
                     noResultsMessage.remove();
                 }
+
+                // Réappliquer le tri actuel après la recherche
+                const currentSort = document.getElementById('sort-select').value;
+                sortArticles(currentSort);
+            }
+
+            // Fonction de tri
+            function sortArticles(sortType) {
+                const articlesArray = Array.from(articles).filter(article => !article.classList.contains('hidden'));
+
+                articlesArray.sort((a, b) => {
+                    switch(sortType) {
+                        case 'price_asc':
+                            return getPriceFromArticle(a) - getPriceFromArticle(b);
+                        case 'price_desc':
+                            return getPriceFromArticle(b) - getPriceFromArticle(a);
+                        case 'date_asc':
+                            return new Date(getDateFromArticle(a)) - new Date(getDateFromArticle(b));
+                        case 'date_desc':
+                            return new Date(getDateFromArticle(b)) - new Date(getDateFromArticle(a));
+                        case 'name_asc':
+                            return getNameFromArticle(a).localeCompare(getNameFromArticle(b));
+                        case 'name_desc':
+                            return getNameFromArticle(b).localeCompare(getNameFromArticle(a));
+                        default:
+                            return 0;
+                    }
+                });
+
+                // Vider et reremplir la grille avec les articles triés
+                articlesGrid.innerHTML = '';
+                articlesArray.forEach(article => {
+                    articlesGrid.appendChild(article);
+                });
+            }
+
+            // Fonctions utilitaires pour extraire les valeurs
+            function getPriceFromArticle(article) {
+                const priceText = article.querySelector('.article-price').textContent;
+                // Enlever d'abord le symbole € et les espaces
+                const withoutCurrency = priceText.replace('€', '').trim();
+                // Enlever toutes les virgules (séparateurs de milliers) et convertir en nombre
+                const cleanPrice = withoutCurrency.replace(/,/g, '');
+                return parseFloat(cleanPrice);
+            }
+
+            function getNameFromArticle(article) {
+                return article.querySelector('.article-title').textContent.trim();
+            }
+
+            function getDateFromArticle(article) {
+                return article.dataset.date || new Date().toISOString();
+            }
+
+            // Écouteurs d'événements
+            searchInput.addEventListener('input', filterArticles);
+
+            const sortSelect = document.getElementById('sort-select');
+            sortSelect.addEventListener('change', function() {
+                sortArticles(this.value);
             });
 
-            <?php if ($is_logged_in): ?>
             // Gestion de la wishlist
             const favoriteButtons = document.querySelectorAll('.favorite-button');
 
@@ -719,7 +813,9 @@ $result = $mysqli->query($query);
                         });
                 });
             });
-            <?php endif; ?>
+
+            // Tri initial
+            sortArticles('date_desc');
         });
     </script>
 </body>
