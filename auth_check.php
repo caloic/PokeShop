@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Vérifier si l'utilisateur n'est pas connecté
 if (!isset($_SESSION['user_id'])) {

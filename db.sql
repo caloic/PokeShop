@@ -64,6 +64,26 @@ CREATE TABLE commande_articles (
     FOREIGN KEY (article_id) REFERENCES articles(id)
 );
 
+CREATE TABLE wishlist (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    article_id INT NOT NULL,
+    date_ajout TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_wishlist (user_id, article_id)
+);
+
+CREATE TABLE factures (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    commande_id INT NOT NULL,
+    nom_fichier VARCHAR(255) NOT NULL,
+    contenu LONGTEXT NOT NULL,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (commande_id) REFERENCES commandes(id) ON DELETE CASCADE
+);
+
 --Ajout de la colonne user_id dans la table articles
 ALTER TABLE articles ADD COLUMN user_id INT;
 ALTER TABLE articles ADD FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE factures MODIFY COLUMN contenu TEXT;

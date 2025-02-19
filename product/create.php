@@ -1,13 +1,9 @@
 <?php
 require_once '../config.php';
-require_once '../auth_check.php';
-session_start();
-
-// Vérifier si l'utilisateur est connecté et est admin
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
-    exit();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
+require_once '../auth_check.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom = trim($_POST['nom']);
@@ -30,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $slug = $slug . '-' . rand(1, 999);
         }
 
-        // Insérer l'article avec l'ID de l'utilisateur
+        // Insérer l'article
         $insert_article = "INSERT INTO articles (nom, description, prix, image_url, slug, user_id) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $mysqli->prepare($insert_article);
         $stmt->bind_param("ssdssi", $nom, $description, $prix, $image_url, $slug, $_SESSION['user_id']);

@@ -1,7 +1,9 @@
 <?php
 require_once 'config.php';
 require_once 'auth_check.php';
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -104,20 +106,29 @@ $articles = $stmt->get_result();
 // Pour le profil personnel, récupérer les achats
 if ($is_own_profile) {
     $purchases_query = "
-        SELECT 
-            c.date_transaction,
-            c.montant_total,
-            c.adresse,
-            c.ville,
-            c.code_postal,
-            GROUP_CONCAT(CONCAT(ca.quantite, 'x ', a.nom) SEPARATOR ', ') as articles
-        FROM commandes c
-        JOIN commande_articles ca ON c.id = ca.commande_id
-        JOIN articles a ON ca.article_id = a.id
-        WHERE c.user_id = ?
-        GROUP BY c.id
-        ORDER BY c.date_transaction DESC
-    ";
+    SELECT 
+        c.date_transaction,
+        c.montant_total,
+        c.adresse,
+        c.ville,
+        c.code_postal,
+        MAX(f.id) as facture_id,
+        MAX(f.nom_fichier) as nom_fichier,
+        GROUP_CONCAT(CONCAT(ca.quantite, 'x ', a.nom) SEPARATOR ', ') as articles
+    FROM commandes c
+    JOIN commande_articles ca ON c.id = ca.commande_id
+    JOIN articles a ON ca.article_id = a.id
+    LEFT JOIN factures f ON c.id = f.commande_id
+    WHERE c.user_id = ?
+    GROUP BY 
+        c.id, 
+        c.date_transaction, 
+        c.montant_total, 
+        c.adresse, 
+        c.ville, 
+        c.code_postal
+    ORDER BY c.date_transaction DESC
+";
     $stmt = $mysqli->prepare($purchases_query);
     $stmt->bind_param("i", $profile_id);
     $stmt->execute();
@@ -253,8 +264,15 @@ if ($is_own_profile) {
             border-radius: 4px;
         }
 
-        .success { background-color: #e8f5e9; color: #2e7d32; }
-        .error { background-color: #ffebee; color: #c62828; }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
 
         .add-funds-form {
             margin-top: 20px;
@@ -390,7 +408,7 @@ if ($is_own_profile) {
                             <h3><?php echo htmlspecialchars($article['nom']); ?></h3>
                             <p class="price"><?php echo number_format($article['prix'], 2); ?> €</p>
                             <p>Stock: <?php echo $article['quantite']; ?></p>
-                            <?php if ($is_own_profile || $user_role === 'admin'): ?>
+                            <?php if ($is_own_profile): ?>
                                 <a href="product/edit.php?id=<?php echo $article['id']; ?>"
                                    class="btn save-btn">Modifier</a>
                             <?php endif; ?>
@@ -400,34 +418,31 @@ if ($is_own_profile) {
             </div>
 
             <?php if ($is_own_profile): ?>
-            <div id="purchases" class="tab-content">
-                <div class="purchases-list">
-                    <?php while ($purchase = $purchases->fetch_assoc()): ?>
-                    <div class="purchase-item">
-                        <h3>Commande du <?php echo date('d/m/Y H:i', strtotime($purchase['date_transaction'])); ?></h3>
-                        <p><strong>Montant total:</strong> <?php echo number_format($purchase['montant_total'], 2); ?> €</p>
-                        <p><strong>Articles:</strong> <?php echo htmlspecialchars($purchase['articles']); ?></p>
-                        <p><strong>Adresse de livraison:</strong><br>
-                            <?php echo htmlspecialchars($purchase['adresse']); ?><br>
-                            <?php echo htmlspecialchars($purchase['code_postal'] . ' ' . $purchase['ville']); ?>
-                        </p>
-                        <?php
-                        $facture_path = "factures/facture_" . $purchase['id'] . "_" . date('Y-m-d', strtotime($purchase['date_transaction'])) . ".txt";
-                        if (file_exists($facture_path)):
-                            ?>
-                            <a href="<?php echo htmlspecialchars($facture_path); ?>"
-                               class="btn save-btn"
-                               download>
-                                Télécharger la facture
-                            </a>
+                <div id="purchases" class="tab-content">
+                    <div class="purchases-list">
+                        <?php while ($purchase = $purchases->fetch_assoc()): ?>
+                            <div class="purchase-item">
+                                <h3>Commande du <?php echo date('d/m/Y H:i', strtotime($purchase['date_transaction'])); ?></h3>
+                                <p><strong>Montant total:</strong> <?php echo number_format($purchase['montant_total'], 2); ?> €</p>
+                                <p><strong>Articles:</strong> <?php echo htmlspecialchars($purchase['articles']); ?></p>
+                                <p><strong>Adresse de livraison:</strong><br>
+                                    <?php echo htmlspecialchars($purchase['adresse']); ?><br>
+                                    <?php echo htmlspecialchars($purchase['code_postal'] . ' ' . $purchase['ville']); ?>
+                                </p>
+                                <?php if ($purchase['facture_id']): ?>
+                                    <a href="toggle_order.php?id=<?php echo $purchase['facture_id']; ?>"
+                                       class="btn save-btn"
+                                       download>
+                                        Télécharger la facture
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endwhile; ?>
+                        <?php if ($purchases->num_rows === 0): ?>
+                            <p>Aucun achat pour le moment.</p>
                         <?php endif; ?>
                     </div>
-                    <?php endwhile; ?>
-                    <?php if ($purchases->num_rows === 0): ?>
-                        <p>Aucun achat pour le moment.</p>
-                    <?php endif; ?>
                 </div>
-            </div>
             <?php endif; ?>
         </div>
     </div>

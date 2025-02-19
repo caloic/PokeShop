@@ -1,34 +1,23 @@
 <?php
 require_once '../config.php';
-require_once '../auth_check.php';
-session_start();
-
-// Vérifier si l'utilisateur est connecté
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
-    exit();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
+require_once '../auth_check.php';
 
 if (!isset($_GET['id'])) {
     header('Location: ../index.php');
     exit();
 }
 
-// Récupérer le rôle de l'utilisateur
-$role_query = "SELECT role FROM users WHERE id = ?";
-$stmt = $mysqli->prepare($role_query);
-$stmt->bind_param("i", $_SESSION['user_id']);
-$stmt->execute();
-$user_role = $stmt->get_result()->fetch_assoc()['role'];
-
 $article_id = (int)$_GET['id'];
 
 // Récupérer les informations de l'article
 $query = "
-    SELECT articles.*, stocks.quantite, users.username as author
+    SELECT articles.*, stocks.quantite, users.username as author 
     FROM articles 
     LEFT JOIN stocks ON articles.id = stocks.article_id
-    LEFT JOIN users ON articles.user_id = users.id
+    LEFT JOIN users ON articles.user_id = users.id 
     WHERE articles.id = ?
 ";
 $stmt = $mysqli->prepare($query);
@@ -37,92 +26,67 @@ $stmt->execute();
 $article = $stmt->get_result()->fetch_assoc();
 
 if (!$article) {
+    $_SESSION['error'] = "Article non trouvé";
     header('Location: ../index.php');
     exit();
 }
 
-// Vérifier si l'utilisateur est autorisé à modifier
-if ($article['user_id'] !== $_SESSION['user_id'] && $user_role !== 'admin') {
+// Vérifier les droits d'accès
+if ($article['user_id'] != $_SESSION['user_id'] && $user_role !== 'admin') {
+    $_SESSION['error'] = "Vous n'avez pas les droits pour modifier cet article";
     header('Location: ../index.php');
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete'])) {
-        try {
-            $mysqli->begin_transaction();
+        header('Location: delete.php?id=' . $article_id);
+        exit();
+    }
 
-            // Supprimer les entrées du panier
-            $delete_cart = "DELETE FROM carts WHERE article_id = ?";
-            $stmt = $mysqli->prepare($delete_cart);
-            $stmt->bind_param("i", $article_id);
-            $stmt->execute();
+    $nom = trim($_POST['nom']);
+    $description = trim($_POST['description']);
+    $prix = floatval($_POST['prix']);
+    $quantite = intval($_POST['quantite']);
+    $image_url = trim($_POST['image_url']);
+    $slug = strtolower(str_replace(' ', '-', $nom));
 
-            // Supprimer le stock
-            $delete_stock = "DELETE FROM stocks WHERE article_id = ?";
-            $stmt = $mysqli->prepare($delete_stock);
-            $stmt->bind_param("i", $article_id);
-            $stmt->execute();
+    try {
+        $mysqli->begin_transaction();
 
-            // Supprimer l'article
-            $delete_article = "DELETE FROM articles WHERE id = ? AND (user_id = ? OR ? = 'admin')";
-            $stmt = $mysqli->prepare($delete_article);
-            $stmt->bind_param("iis", $article_id, $_SESSION['user_id'], $user_role);
-            $stmt->execute();
-
-            if ($stmt->affected_rows === 0) {
-                throw new Exception("Vous n'êtes pas autorisé à supprimer cet article");
-            }
-
-            $mysqli->commit();
-            $_SESSION['success'] = "Article supprimé avec succès";
-            header('Location: ../index.php');
-            exit();
-
-        } catch (Exception $e) {
-            $mysqli->rollback();
-            $_SESSION['error'] = "Erreur lors de la suppression : " . $e->getMessage();
+        // Vérifier si le nouveau slug existe déjà pour un autre article
+        $check_slug = "SELECT id FROM articles WHERE slug = ? AND id != ?";
+        $stmt = $mysqli->prepare($check_slug);
+        $stmt->bind_param("si", $slug, $article_id);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            $slug = $slug . '-' . rand(1, 999);
         }
-    } else {
-        $nom = trim($_POST['nom']);
-        $description = trim($_POST['description']);
-        $prix = floatval($_POST['prix']);
-        $quantite = intval($_POST['quantite']);
-        $image_url = trim($_POST['image_url']);
-        $slug = strtolower(str_replace(' ', '-', $nom));
 
-        try {
-            $mysqli->begin_transaction();
+        // Mettre à jour l'article
+        $update_article = "
+            UPDATE articles 
+            SET nom = ?, description = ?, prix = ?, image_url = ?, slug = ?
+            WHERE id = ?
+        ";
+        $stmt = $mysqli->prepare($update_article);
+        $stmt->bind_param("ssdssi", $nom, $description, $prix, $image_url, $slug, $article_id);
+        $stmt->execute();
 
-            // Mettre à jour l'article
-            $update_article = "
-                UPDATE articles 
-                SET nom = ?, description = ?, prix = ?, image_url = ?, slug = ?
-                WHERE id = ? AND (user_id = ? OR ? = 'admin')
-            ";
-            $stmt = $mysqli->prepare($update_article);
-            $stmt->bind_param("ssdssiss", $nom, $description, $prix, $image_url, $slug, $article_id, $_SESSION['user_id'], $user_role);
-            $stmt->execute();
+        // Mettre à jour le stock
+        $update_stock = "UPDATE stocks SET quantite = ? WHERE article_id = ?";
+        $stmt = $mysqli->prepare($update_stock);
+        $stmt->bind_param("ii", $quantite, $article_id);
+        $stmt->execute();
 
-            if ($stmt->affected_rows === 0) {
-                throw new Exception("Vous n'êtes pas autorisé à modifier cet article");
-            }
+        $mysqli->commit();
+        $_SESSION['success'] = "Article modifié avec succès";
+        header('Location: ../index.php');
+        exit();
 
-            // Mettre à jour le stock
-            $update_stock = "UPDATE stocks SET quantite = ? WHERE article_id = ?";
-            $stmt = $mysqli->prepare($update_stock);
-            $stmt->bind_param("ii", $quantite, $article_id);
-            $stmt->execute();
-
-            $mysqli->commit();
-            $_SESSION['success'] = "Article modifié avec succès";
-            header('Location: ../index.php');
-            exit();
-
-        } catch (Exception $e) {
-            $mysqli->rollback();
-            $_SESSION['error'] = "Erreur lors de la modification : " . $e->getMessage();
-        }
+    } catch (Exception $e) {
+        $mysqli->rollback();
+        $_SESSION['error'] = "Erreur lors de la modification : " . $e->getMessage();
     }
 }
 ?>
@@ -196,18 +160,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 5px;
         }
 
+        .back-btn {
+            background-color: #34495e;
+            color: white;
+        }
+
         .save-btn {
             background-color: #2ecc71;
             color: white;
+            font-size: 16px;
         }
 
         .delete-btn {
             background-color: #e74c3c;
-            color: white;
-        }
-
-        .back-btn {
-            background-color: #34495e;
             color: white;
         }
 

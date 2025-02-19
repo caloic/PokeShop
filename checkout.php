@@ -1,7 +1,10 @@
 <?php
 require_once 'config.php';
 require_once 'auth_check.php';
-session_start();
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
@@ -103,41 +106,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("i", $_SESSION['user_id']);
             $stmt->execute();
 
-            // Générer la facture
-            $facture_content = "FACTURE\n\n";
-            $facture_content .= "Date: " . date("Y-m-d H:i:s") . "\n";
-            $facture_content .= "Commande #" . $commande_id . "\n\n";
-            $facture_content .= "Articles:\n";
+            // Générer le contenu de la facture en texte
+            $contenu_facture = "FACTURE\n";
+            $contenu_facture .= "=======\n\n";
+            $contenu_facture .= "Commande #" . $commande_id . "\n";
+            $contenu_facture .= "Date: " . date("Y-m-d H:i:s") . "\n\n";
+            $contenu_facture .= "Articles:\n";
+            $contenu_facture .= "--------\n";
 
             foreach ($items as $item) {
-                $facture_content .= sprintf(
-                    "- %s x%d : %.2f €\n",
+                $contenu_facture .= sprintf(
+                    "%s (x%d) : %.2f €\n",
                     $item['nom'],
                     $item['cart_quantite'],
                     $item['prix'] * $item['cart_quantite']
                 );
             }
 
-            $facture_content .= "\nTotal: " . number_format($total, 2) . " €\n";
-            $facture_content .= "\nAdresse de livraison:\n";
-            $facture_content .= $adresse . "\n";
-            $facture_content .= $code_postal . " " . $ville . "\n";
+            $contenu_facture .= "\nTotal: " . number_format($total, 2) . " €\n\n";
+            $contenu_facture .= "Adresse de livraison:\n";
+            $contenu_facture .= "-------------------\n";
+            $contenu_facture .= $adresse . "\n";
+            $contenu_facture .= $code_postal . " " . $ville . "\n";
 
-            // Créer le dossier factures s'il n'existe pas
-            if (!file_exists('factures')) {
-                mkdir('factures', 0777, true);
+            // Stocker dans la base de données
+            $insert_facture = "INSERT INTO factures (commande_id, nom_fichier, contenu) VALUES (?, ?, ?)";
+            $stmt_facture = $mysqli->prepare($insert_facture);
+            $nom_fichier = "facture_" . $commande_id . "_" . date("Y-m-d") . ".txt";
+
+            $stmt_facture->bind_param("iss", $commande_id, $nom_fichier, $contenu_facture);
+
+            if (!$stmt_facture->execute()) {
+                throw new Exception("Erreur lors de l'enregistrement de la facture");
             }
-
-            // Sauvegarder la facture
-            $facture_file = "factures/facture_" . $commande_id . "_" . date("Y-m-d") . ".txt";
-            file_put_contents($facture_file, $facture_content);
 
             // Valider la transaction
             $mysqli->commit();
 
             $_SESSION['success'] = "Commande validée avec succès !";
-            $_SESSION['facture_path'] = $facture_file;
-            header('Location: cart_validate.php?order_id=' . $commande_id);
+            header('Location: cart/validate.php?order_id=' . $commande_id);
             exit();
 
         } catch (Exception $e) {
@@ -252,13 +259,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Résumé de la commande</h2>
         <?php foreach ($items as $item): ?>
             <div class="item">
-                    <span>
-                        <?php echo htmlspecialchars($item['nom']); ?>
-                        (x<?php echo $item['cart_quantite']; ?>)
-                    </span>
                 <span>
-                        <?php echo number_format($item['prix'] * $item['cart_quantite'], 2); ?> €
-                    </span>
+                    <?php echo htmlspecialchars($item['nom']); ?>
+                    (x<?php echo $item['cart_quantite']; ?>)
+                </span>
+                <span>
+                    <?php echo number_format($item['prix'] * $item['cart_quantite'], 2); ?> €
+                </span>
             </div>
         <?php endforeach; ?>
 
