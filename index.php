@@ -7,6 +7,11 @@ $is_logged_in = isset($_SESSION['user_id']);
 
 // Si l'utilisateur est connecté, récupérer ses informations
 if ($is_logged_in) {
+    $user_query = "SELECT * FROM users WHERE id = ?";
+    $user_stmt = $mysqli->prepare($user_query);
+    $user_stmt->bind_param("i", $_SESSION['user_id']);
+    $user_stmt->execute();
+    $user = $user_stmt->get_result()->fetch_assoc();
     // Récupérer le nombre d'articles dans le panier
     $cart_query = "SELECT SUM(quantite) as total_items FROM carts WHERE user_id = ?";
     $cart_stmt = $mysqli->prepare($cart_query);
@@ -147,16 +152,35 @@ $result = $mysqli->query($query);
 
             .header-button:hover {
                 background-color: rgba(255, 255, 255, 0.1);
-                transform: translateY(-1px);
+            }
+
+            .header-avatar {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                object-fit: cover;
             }
 
             .cart-button {
-                background-color: white;
+                background-color: white !important;
+                color: #4169E1 !important;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 16px;
+                border-radius: 20px;
+                text-decoration: none;
+                font-weight: 500;
+                transition: all 0.3s;
+            }
+
+            .cart-button svg {
                 color: #4169E1;
+                stroke: #4169E1;
             }
 
             .cart-button:hover {
-                background-color: #f0f0f0;
+                background-color: #f0f0f0 !important;
             }
 
             .cart-count {
@@ -166,6 +190,62 @@ $result = $mysqli->query($query);
                 border-radius: 10px;
                 font-size: 12px;
                 font-weight: bold;
+            }
+
+            .auth-buttons .header-button {
+                color: white;
+            }
+
+            .auth-buttons .header-button:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .profile-dropdown {
+                position: relative;
+            }
+
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                right: 0;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                min-width: 200px;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+                margin-top: 5px;
+                z-index: 1000;
+            }
+
+            .profile-dropdown:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            .dropdown-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                color: #333;
+                text-decoration: none;
+                transition: background-color 0.2s;
+            }
+
+            .dropdown-item:first-child {
+                border-radius: 8px 8px 0 0;
+            }
+
+            .dropdown-item:last-child {
+                border-radius: 0 0 8px 8px;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f8f9fa;
             }
 
             /* Main Content Styles */
@@ -179,6 +259,28 @@ $result = $mysqli->query($query);
                 font-size: 28px;
                 margin: 20px 0;
                 color: #333;
+            }
+
+            .sort-container {
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            .sort-select {
+                padding: 8px 12px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 14px;
+                cursor: pointer;
+                min-width: 200px;
+            }
+
+            .sort-select:focus {
+                outline: none;
+                border-color: #4169E1;
+                box-shadow: 0 0 0 2px rgba(65,105,225,0.1);
             }
 
             .articles-grid {
@@ -306,118 +408,6 @@ $result = $mysqli->query($query);
                 display: none;
             }
 
-            .no-articles {
-                text-align: center;
-                padding: 40px;
-                background: white;
-                border-radius: 8px;
-                margin: 20px 0;
-                grid-column: 1 / -1;
-            }
-
-            .no-articles h2 {
-                color: #4169E1;
-                margin-bottom: 10px;
-            }
-
-            .no-articles p {
-                color: #666;
-            }
-
-            .profile-dropdown {
-                position: relative;
-            }
-
-            .dropdown-menu {
-                position: absolute;
-                top: 100%;
-                right: 0;
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                min-width: 200px;
-                opacity: 0;
-                visibility: hidden;
-                transform: translateY(-10px);
-                transition: all 0.3s ease;
-                margin-top: 5px;
-                z-index: 1000;
-            }
-
-            .profile-dropdown:hover .dropdown-menu {
-                opacity: 1;
-                visibility: visible;
-                transform: translateY(0);
-            }
-
-            .dropdown-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 12px 16px;
-                color: #333;
-                text-decoration: none;
-                transition: background-color 0.2s;
-            }
-
-            .dropdown-item:first-child {
-                border-radius: 8px 8px 0 0;
-            }
-
-            .dropdown-item:last-child {
-                border-radius: 0 0 8px 8px;
-            }
-
-            .dropdown-item:hover {
-                background-color: #f8f9fa;
-            }
-
-            .auth-buttons {
-                display: flex;
-                gap: 10px;
-            }
-
-            .header-actions {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            }
-
-            .create-button {
-                background-color: #2ecc71;
-                color: white;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                transition: background-color 0.3s;
-            }
-
-            .create-button:hover {
-                background-color: #27ae60;
-            }
-
-            /* Responsive Design */
-            @media (max-width: 768px) {
-                .header-content {
-                    flex-direction: column;
-                    gap: 10px;
-                }
-
-                .search-bar {
-                    width: 100%;
-                    max-width: none;
-                }
-
-                .header-actions {
-                    width: 100%;
-                    justify-content: center;
-                }
-
-                .articles-grid {
-                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                }
-            }
-
             .admin-actions {
                 position: fixed;
                 bottom: 20px;
@@ -453,7 +443,6 @@ $result = $mysqli->query($query);
                 background-color: #27ae60;
             }
 
-            /* Styles pour le bouton de favoris */
             .favorite-button {
                 position: absolute;
                 top: 10px;
@@ -485,26 +474,44 @@ $result = $mysqli->query($query);
                 stroke: #ff4444;
             }
 
-            .sort-container {
-                margin-bottom: 20px;
-                display: flex;
-                justify-content: flex-end;
+            .no-articles {
+                text-align: center;
+                padding: 40px;
+                background: white;
+                border-radius: 8px;
+                margin: 20px 0;
+                grid-column: 1 / -1;
             }
 
-            .sort-select {
-                padding: 8px 12px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                background-color: white;
-                font-size: 14px;
-                cursor: pointer;
-                min-width: 200px;
+            .no-articles h2 {
+                color: #4169E1;
+                margin-bottom: 10px;
             }
 
-            .sort-select:focus {
-                outline: none;
-                border-color: #4169E1;
-                box-shadow: 0 0 0 2px rgba(65,105,225,0.1);
+            .no-articles p {
+                color: #666;
+            }
+
+            /* Responsive Design */
+            @media (max-width: 768px) {
+                .header-content {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+
+                .search-bar {
+                    width: 100%;
+                    max-width: none;
+                }
+
+                .header-actions {
+                    width: 100%;
+                    justify-content: center;
+                }
+
+                .articles-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                }
             }
         </style>
     </head>
@@ -529,7 +536,16 @@ $result = $mysqli->query($query);
                 <?php if ($is_logged_in): ?>
                     <div class="profile-dropdown">
                         <a href="#" class="header-button" id="profile-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <?php if (!empty($user['avatar'])): ?>
+                                <img src="<?php echo htmlspecialchars($user['avatar']); ?>"
+                                     alt="Avatar de <?php echo htmlspecialchars($_SESSION['username']); ?>"
+                                     class="header-avatar">
+                            <?php else: ?>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            <?php endif; ?>
                             <?php echo htmlspecialchars($_SESSION['username']); ?>
                         </a>
                         <div class="dropdown-menu">
@@ -553,14 +569,12 @@ $result = $mysqli->query($query);
                             </a>
                         </div>
                     </div>
-                    <?php if ($is_logged_in): ?>
-                        <div class="admin-actions">
-                            <a href="product/create.php" class="admin-button create-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                Créer un article
-                            </a>
-                        </div>
-                    <?php endif; ?>
+                    <div class="admin-actions">
+                        <a href="product/create.php" class="admin-button create-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Créer un article
+                        </a>
+                    </div>
                     <a href="cart/cart.php" class="header-button cart-button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                         <?php if ($cart_count > 0): ?>
