@@ -30,7 +30,7 @@ if (!$user) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile) {
     if (isset($_POST['update_profile'])) {
         $email = trim($_POST['email']);
-        $avatar = trim($_POST['avatar']);
+        $avatar = $user['avatar']; // Si l'avatar n'est pas mis à jour, on garde l'avatar actuel
         $current_password = $_POST['current_password'];
         $new_password = trim($_POST['new_password']);
 
@@ -169,13 +169,30 @@ if ($is_own_profile) {
         </div>
     <?php endif; ?>
 
-    <div class="profile-section">
-        <div class="profile-info">
-            <?php if ($user['avatar']): ?>
-                <img src="<?php echo htmlspecialchars($user['avatar']); ?>"
-                     alt="Avatar"
-                     class="avatar">
-            <?php endif; ?>
+            <div class="profile-section">
+    <div class="profile-info">
+        <?php if (!empty($user['avatar'])): ?>
+            <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Avatar" class="avatar">
+        <?php else: ?>
+            <img src="default-avatar.png" alt="Avatar par défaut" class="avatar">
+        <?php endif; ?>
+
+
+            <!-- Formulaire d'upload d'avatar séparé -->
+            <form action="upload_avatar.php" method="post" enctype="multipart/form-data">
+    <label for="avatar" class="custom-file-upload" style="cursor: pointer; background-color: #2c3e50; color: white; padding: 10px; border-radius: 5px; display: inline-block;">
+        Modifier l'avatar
+    </label>
+    <input type="file" name="avatar" id="avatar" style="display: none;" required>
+    <button type="submit" class="btn save-btn">Envoyer</button>
+</form>
+
+<script>
+    document.querySelector("#avatar").addEventListener("change", function() {
+        // Optionnel : Afficher le nom du fichier sélectionné
+        alert("Fichier sélectionné : " + this.files[0].name);
+    });
+</script>
 
             <h2><?php echo htmlspecialchars($user['username']); ?></h2>
             <p>Membre depuis: <?php echo date('d/m/Y', strtotime($user['created_at'])); ?></p>
@@ -198,12 +215,6 @@ if ($is_own_profile) {
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" required
                                value="<?php echo htmlspecialchars($user['email']); ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="avatar">URL de l'avatar</label>
-                        <input type="text" id="avatar" name="avatar"
-                               value="<?php echo htmlspecialchars($user['avatar']); ?>">
                     </div>
 
                     <div class="form-group">
