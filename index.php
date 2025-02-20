@@ -45,6 +45,7 @@ $query = "
     FROM articles 
     LEFT JOIN stocks ON articles.id = stocks.article_id 
     LEFT JOIN users ON articles.user_id = users.id
+    WHERE articles.is_deleted = FALSE
     ORDER BY articles.date_publication DESC
 ";
 $result = $mysqli->query($query);

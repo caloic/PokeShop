@@ -13,32 +13,27 @@ $article_id = (int)$_GET['id'];
 try {
     $mysqli->begin_transaction();
 
-    // Supprimer d'abord les références dans le panier
-    $delete_cart = "DELETE FROM carts WHERE article_id = ?";
-    $stmt = $mysqli->prepare($delete_cart);
+    // Marquer l'article comme supprimé
+    $delete_article = "UPDATE articles SET is_deleted = TRUE WHERE id = ?";
+    $stmt = $mysqli->prepare($delete_article);
     $stmt->bind_param("i", $article_id);
     $stmt->execute();
 
-    // Supprimer le stock
+    // Supprimer le stock (optionnel)
     $delete_stock = "DELETE FROM stocks WHERE article_id = ?";
     $stmt = $mysqli->prepare($delete_stock);
     $stmt->bind_param("i", $article_id);
     $stmt->execute();
 
-    // Supprimer l'article
-    $delete_article = "DELETE FROM articles WHERE id = ?";
-    $stmt = $mysqli->prepare($delete_article);
-    $stmt->bind_param("i", $article_id);
-    $stmt->execute();
-
     $mysqli->commit();
-    $_SESSION['success'] = "Article supprimé avec succès";
+    $_SESSION['success'] = "Article archivé avec succès";
+    header('Location: articles.php');
+    exit();
 
 } catch (Exception $e) {
     $mysqli->rollback();
     $_SESSION['error'] = "Erreur lors de la suppression : " . $e->getMessage();
+    header('Location: articles.php');
+    exit();
 }
-
-header('Location: articles.php');
-exit();
 ?>

@@ -26,11 +26,10 @@ $query = "
         c.*,
         f.id as facture_id,
         f.nom_fichier,
-        GROUP_CONCAT(CONCAT(ca.quantite, 'x ', a.nom) SEPARATOR ', ') as articles
+        GROUP_CONCAT(CONCAT(ca.quantite, 'x ', ca.article_name) SEPARATOR ', ') as articles
     FROM commandes c
     LEFT JOIN factures f ON c.id = f.commande_id
     JOIN commande_articles ca ON c.id = ca.commande_id
-    JOIN articles a ON ca.article_id = a.id
     WHERE c.id = ? AND c.user_id = ?
     GROUP BY c.id, f.id, f.nom_fichier
 ";

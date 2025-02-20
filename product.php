@@ -35,7 +35,7 @@ $query = "
     FROM articles 
     LEFT JOIN stocks ON articles.id = stocks.article_id 
     LEFT JOIN users ON articles.user_id = users.id
-    WHERE articles.id = ? AND articles.slug = ?
+    WHERE articles.id = ? AND articles.slug = ? AND articles.is_deleted = FALSE
 ";
 $stmt = $mysqli->prepare($query);
 $stmt->bind_param("is", $article_id, $slug);

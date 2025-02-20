@@ -95,7 +95,7 @@ $articles_query = "
     SELECT articles.*, stocks.quantite 
     FROM articles 
     LEFT JOIN stocks ON articles.id = stocks.article_id 
-    WHERE articles.user_id = ?
+    WHERE articles.user_id = ? AND articles.is_deleted = FALSE
     ORDER BY articles.date_publication DESC
 ";
 $stmt = $mysqli->prepare($articles_query);
@@ -114,10 +114,12 @@ if ($is_own_profile) {
         c.code_postal,
         MAX(f.id) as facture_id,
         MAX(f.nom_fichier) as nom_fichier,
-        GROUP_CONCAT(CONCAT(ca.quantite, 'x ', a.nom) SEPARATOR ', ') as articles
+        GROUP_CONCAT(
+            CONCAT(ca.quantite, 'x ', ca.article_name)
+            SEPARATOR ', '
+        ) as articles
     FROM commandes c
     JOIN commande_articles ca ON c.id = ca.commande_id
-    JOIN articles a ON ca.article_id = a.id
     LEFT JOIN factures f ON c.id = f.commande_id
     WHERE c.user_id = ?
     GROUP BY 

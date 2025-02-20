@@ -12,6 +12,19 @@ if (!isset($_GET['id'])) {
 
 $article_id = (int)$_GET['id'];
 
+$check_deleted = "SELECT is_deleted FROM articles WHERE id = ?";
+$stmt = $mysqli->prepare($check_deleted);
+$stmt->bind_param("i", $article_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$article = $result->fetch_assoc();
+
+if ($article['is_deleted']) {
+    $_SESSION['error'] = "Cet article a été supprimé et ne peut pas être modifié";
+    header('Location: ../index.php');
+    exit();
+}
+
 // Récupérer les informations de l'article
 $query = "
     SELECT articles.*, stocks.quantite, users.username as author 

@@ -84,8 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 // Ajouter l'article à la commande
+                $insert_items = "INSERT INTO commande_articles (commande_id, article_id, quantite, prix_unitaire, article_name) VALUES (?, ?, ?, ?, ?)";
                 $stmt = $mysqli->prepare($insert_items);
-                $stmt->bind_param("iiid", $commande_id, $item['article_id'], $item['cart_quantite'], $item['prix']);
+                $stmt->bind_param("iiids", $commande_id, $item['article_id'], $item['cart_quantite'], $item['prix'], $item['nom']);
                 $stmt->execute();
 
                 // Mettre à jour le stock

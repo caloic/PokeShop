@@ -16,6 +16,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $mysqli->begin_transaction();
 
+        $check_deleted = "SELECT is_deleted FROM articles WHERE id = ?";
+        $stmt = $mysqli->prepare($check_deleted);
+        $stmt->bind_param("i", $article_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $article = $result->fetch_assoc();
+
+        if ($article['is_deleted']) {
+            $_SESSION['error'] = "Cet article a été supprimé et ne peut pas être modifié";
+            header('Location: ../index.php');
+            exit();
+        }
+
         // Vérifier si le slug existe déjà
         $check_slug = "SELECT id FROM articles WHERE slug = ?";
         $stmt = $mysqli->prepare($check_slug);
