@@ -13,7 +13,7 @@ body {
 
 /* Header Styles */
 .main-header {
-    background-color: #4169E1;
+    background-color: #3B4CCA;
     padding: 15px 30px;
     position: fixed;
     top: 0;
@@ -38,6 +38,12 @@ body {
     font-size: 24px;
     font-weight: bold;
     white-space: nowrap;
+}
+
+.logo-image {
+    max-height: 50px;
+    width: auto;
+    display: block;
 }
 
 .search-bar {
@@ -68,7 +74,7 @@ body {
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #4169E1;
+    color: #3B4CCA;
     cursor: pointer;
     padding: 8px;
 }
@@ -104,7 +110,7 @@ body {
 
 .cart-button {
     background-color: white !important;
-    color: #4169E1 !important;
+    color: #3B4CCA !important;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -116,8 +122,8 @@ body {
 }
 
 .cart-button svg {
-    color: #4169E1;
-    stroke: #4169E1;
+    color: #3B4CCA;
+    stroke: #3B4CCA;
 }
 
 .cart-button:hover {
@@ -220,7 +226,7 @@ body {
 
 .sort-select:focus {
     outline: none;
-    border-color: #4169E1;
+    border-color: #3B4CCA;
     box-shadow: 0 0 0 2px rgba(65,105,225,0.1);
 }
 
@@ -276,7 +282,7 @@ body {
 .article-price {
     font-size: 1.4em;
     font-weight: bold;
-    color: #4169E1;
+    color: #3B4CCA;
     margin: 10px 0;
 }
 
@@ -324,7 +330,7 @@ body {
     transition: background-color 0.3s;
     display: inline-block;
     margin-bottom: 8px;
-    background-color: #4169E1;
+    background-color: #3B4CCA;
     color: white;
 }
 
@@ -364,7 +370,7 @@ body {
     font-weight: 500;
     text-decoration: none;
     color: white;
-    background-color: #4169E1;
+    background-color: #3B4CCA;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     transition: transform 0.3s, box-shadow 0.3s;
     display: flex;
@@ -425,7 +431,7 @@ body {
 }
 
 .no-articles h2 {
-    color: #4169E1;
+    color: #3B4CCA;
     margin-bottom: 10px;
 }
 

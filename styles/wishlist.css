@@ -27,7 +27,7 @@ body {
 
 .wishlist-title {
     font-size: 2em;
-    color: #4169E1;
+    color: #3B4CCA;
     font-weight: 700;
 }
 
@@ -72,7 +72,7 @@ body {
 
 .wishlist-item-price {
     font-size: 1.4em;
-    color: #4169E1;
+    color: #3B4CCA;
     font-weight: 700;
     margin-bottom: 10px;
 }
@@ -158,7 +158,7 @@ body {
 }
 
 .no-wishlist-title {
-    color: #4169E1;
+    color: #3B4CCA;
     margin-bottom: 15px;
     font-size: 1.5em;
 }
@@ -167,9 +167,9 @@ body {
     color: #666;
 }
 
-/* Header Styles (reste inchangé) */
+/* Header Styles */
 .main-header {
-    background-color: #4169E1;
+    background-color: #3B4CCA;
     padding: 15px 30px;
     display: flex;
     justify-content: space-between;
@@ -181,6 +181,13 @@ body {
     text-decoration: none;
     font-size: 24px;
     font-weight: bold;
+    white-space: nowrap;
+}
+
+.logo-image {
+    max-height: 50px;
+    width: auto;
+    display: block;
 }
 
 .header-actions {

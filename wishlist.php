@@ -38,12 +38,14 @@ $result = $stmt->get_result();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ma Wishlist - MonSite</title>
+    <title>Ma Wishlist - PokéShop</title>
     <link rel="stylesheet" href="styles/wishlist.css">
 </head>
 <body>
 <header class="main-header">
-    <a href="index.php" class="logo">MonSite</a>
+    <a href="index.php" class="logo">
+        <img src="images/logo.png" alt="Logo PokéShop" class="logo-image">
+    </a>
     <div class="header-actions">
         <a href="account.php" class="header-button">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -54,7 +54,7 @@ $result = $mysqli->query($query);
     <!DOCTYPE html>
     <html>
     <head>
-        <title>MonSite - Articles en vente</title>
+        <title>PokéShop - Articles en vente</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="styles/style.css">
@@ -63,7 +63,9 @@ $result = $mysqli->query($query);
     <!-- Header -->
     <header class="main-header">
         <div class="header-content">
-            <a href="index.php" class="logo">MonSite</a>
+            <a href="index.php" class="logo">
+                <img src="images/logo.png" alt="Logo PokéShop" class="logo-image">
+            </a>
 
             <form class="search-bar" onsubmit="return false;">
                 <input type="text"

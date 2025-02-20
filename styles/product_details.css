@@ -56,7 +56,7 @@ body {
 }
 
 .product-author a {
-    color: #4169E1;
+    color: #3B4CCA;
     text-decoration: none;
     font-weight: 500;
 }
@@ -74,7 +74,7 @@ body {
 .product-price {
     font-size: 2em;
     font-weight: bold;
-    color: #4169E1;
+    color: #3B4CCA;
     margin: 20px 0;
 }
 
@@ -122,7 +122,7 @@ body {
 }
 
 .add-cart-button {
-    background-color: #4169E1;
+    background-color: #3B4CCA;
 }
 
 .action-button:disabled {
@@ -134,7 +134,7 @@ body {
 .back-link {
     display: inline-flex;
     align-items: center;
-    color: #4169E1;
+    color: #3B4CCA;
     text-decoration: none;
     margin-bottom: 20px;
     font-weight: 500;
