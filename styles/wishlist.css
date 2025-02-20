@@ -10,6 +10,8 @@ body {
     background-color: #f4f7f6;
     color: #333;
     line-height: 1.6;
+    background-image: url("../images/background.png");
+    background-size: cover;
 }
 
 .container {
