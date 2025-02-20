@@ -43,8 +43,8 @@ if (empty($facture['contenu'])) {
     die('Erreur : Le contenu de la facture est vide');
 }
 
-// Définir les headers pour le téléchargement du fichier texte
-header('Content-Type: text/plain');
+// Définir les headers pour le téléchargement du PDF
+header('Content-Type: application/pdf');
 header('Content-Disposition: attachment; filename="' . $facture['nom_fichier'] . '"');
 header('Content-Length: ' . strlen($facture['contenu']));
 header('Cache-Control: private, no-cache, no-store, must-revalidate');

@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'auth_check.php';
+require_once 'vendor/autoload.php'; // Chemin vers l'autoload de Composer
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -73,15 +74,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
             $commande_id = $mysqli->insert_id;
 
-            // Ajouter les articles de la commande
-            $insert_items = "INSERT INTO commande_articles (commande_id, article_id, quantite, prix_unitaire) VALUES (?, ?, ?, ?)";
-            $update_stock = "UPDATE stocks SET quantite = quantite - ? WHERE article_id = ?";
+            // Créer un nouvel objet PDF
+            $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
+            // Définir les informations du document
+            $pdf->SetCreator(PDF_CREATOR);
+            $pdf->SetAuthor('MonSite');
+            $pdf->SetTitle('Facture #' . $commande_id);
+            $pdf->SetSubject('Facture de commande');
+
+            // Supprimer les en-têtes et pieds de page par défaut
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+
+            // Ajouter une page
+            $pdf->AddPage();
+
+            // Style pour le PDF
+            $pdf->SetFont('helvetica', '', 10);
+
+            // Contenu de la facture
+            $html = '
+            <style>
+                .facture-header { text-align: center; margin-bottom: 20px; }
+                .facture-details { margin-bottom: 20px; }
+                .articles-table { width: 100%; border-collapse: collapse; }
+                .articles-table th, .articles-table td { border: 1px solid #ddd; padding: 8px; }
+            </style>
+            <div class="facture-header">
+                <h1>Facture #' . $commande_id . '</h1>
+                <p>Date : ' . date('d/m/Y H:i') . '</p>
+            </div>
+
+            <div class="facture-details">
+                <p><strong>Adresse de livraison :</strong><br>
+                ' . htmlspecialchars($adresse) . '<br>
+                ' . htmlspecialchars($code_postal . ' ' . $ville) . '</p>
+            </div>
+
+            <table class="articles-table">
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Quantité</th>
+                        <th>Prix unitaire</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+            // Ajouter les articles à la facture
             foreach ($items as $item) {
-                // Vérifier le stock une dernière fois
-                if ($item['cart_quantite'] > $item['stock_disponible']) {
-                    throw new Exception("Stock insuffisant pour l'article " . $item['nom']);
-                }
+                $html .= '
+                    <tr>
+                        <td>' . htmlspecialchars($item['nom']) . '</td>
+                        <td>' . $item['cart_quantite'] . '</td>
+                        <td>' . number_format($item['prix'], 2) . ' €</td>
+                        <td>' . number_format($item['prix'] * $item['cart_quantite'], 2) . ' €</td>
+                    </tr>';
 
                 // Ajouter l'article à la commande
                 $insert_items = "INSERT INTO commande_articles (commande_id, article_id, quantite, prix_unitaire, article_name) VALUES (?, ?, ?, ?, ?)";
@@ -90,10 +140,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute();
 
                 // Mettre à jour le stock
+                $update_stock = "UPDATE stocks SET quantite = quantite - ? WHERE article_id = ?";
                 $stmt = $mysqli->prepare($update_stock);
                 $stmt->bind_param("ii", $item['cart_quantite'], $item['article_id']);
                 $stmt->execute();
             }
+
+            $html .= '
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="text-align: right;"><strong>Total :</strong></td>
+                        <td>' . number_format($total, 2) . ' €</td>
+                    </tr>
+                </tfoot>
+            </table>';
+
+            // Écrire le HTML dans le PDF
+            $pdf->writeHTML($html, true, false, true, false, '');
+
+            // Générer le nom de fichier
+            $nom_fichier = "facture_" . $commande_id . "_" . date("Y-m-d") . ".pdf";
+
+            // Générer le contenu PDF
+            $pdf_content = $pdf->Output('', 'S');
+
+            // Insérer la facture dans la base de données
+            $insert_facture = "INSERT INTO factures (commande_id, nom_fichier, contenu) VALUES (?, ?, ?)";
+            $stmt_facture = $mysqli->prepare($insert_facture);
+            $stmt_facture->bind_param("iss", $commande_id, $nom_fichier, $pdf_content);
+            $stmt_facture->execute();
 
             // Déduire le montant du solde utilisateur
             $update_solde = "UPDATE users SET solde = solde - ? WHERE id = ?";
@@ -106,40 +182,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $mysqli->prepare($clear_cart);
             $stmt->bind_param("i", $_SESSION['user_id']);
             $stmt->execute();
-
-            // Générer le contenu de la facture en texte
-            $contenu_facture = "FACTURE\n";
-            $contenu_facture .= "=======\n\n";
-            $contenu_facture .= "Commande #" . $commande_id . "\n";
-            $contenu_facture .= "Date: " . date("Y-m-d H:i:s") . "\n\n";
-            $contenu_facture .= "Articles:\n";
-            $contenu_facture .= "--------\n";
-
-            foreach ($items as $item) {
-                $contenu_facture .= sprintf(
-                    "%s (x%d) : %.2f €\n",
-                    $item['nom'],
-                    $item['cart_quantite'],
-                    $item['prix'] * $item['cart_quantite']
-                );
-            }
-
-            $contenu_facture .= "\nTotal: " . number_format($total, 2) . " €\n\n";
-            $contenu_facture .= "Adresse de livraison:\n";
-            $contenu_facture .= "-------------------\n";
-            $contenu_facture .= $adresse . "\n";
-            $contenu_facture .= $code_postal . " " . $ville . "\n";
-
-            // Stocker dans la base de données
-            $insert_facture = "INSERT INTO factures (commande_id, nom_fichier, contenu) VALUES (?, ?, ?)";
-            $stmt_facture = $mysqli->prepare($insert_facture);
-            $nom_fichier = "facture_" . $commande_id . "_" . date("Y-m-d") . ".txt";
-
-            $stmt_facture->bind_param("iss", $commande_id, $nom_fichier, $contenu_facture);
-
-            if (!$stmt_facture->execute()) {
-                throw new Exception("Erreur lors de l'enregistrement de la facture");
-            }
 
             // Valider la transaction
             $mysqli->commit();
