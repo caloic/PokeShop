@@ -52,67 +52,7 @@ $commande = $result->fetch_assoc();
 <html>
 <head>
     <title>Commande validée</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .success-message {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-
-        .order-details {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #2ecc71;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-top: 20px;
-            margin-right: 10px;
-        }
-
-        .btn:hover {
-            background-color: #27ae60;
-        }
-
-        .btn-back {
-            background-color: #34495e;
-        }
-
-        .btn-back:hover {
-            background-color: #2c3e50;
-        }
-
-        .download-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-    </style>
+    <link rel="stylesheet" href="../styles/cart.css">
 </head>
 <body>
 <div class="container">
