@@ -16,6 +16,8 @@ $stats = [
 <head>
     <title>Administration</title>
     <link rel="stylesheet" href="../styles/admin.css">
+    <link rel="icon" type="image/png" href="../images/favicon.png">
+
 </head>
 <body>
 <div class="container">

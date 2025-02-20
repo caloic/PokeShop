@@ -203,6 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <title>Finaliser la commande</title>
     <link rel="stylesheet" href="styles/checkout.css">
+    <link rel="icon" type="image/png" href="images/favicon.png">
 </head>
 <body>
 <div class="container">

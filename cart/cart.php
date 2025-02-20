@@ -79,6 +79,7 @@ $total = 0;
 <head>
     <title>Mon Panier</title>
     <link rel="stylesheet" href="../styles/cart.css">
+    <link rel="icon" type="image/png" href="../images/favicon.png">
 </head>
 <body>
 <?php if (isset($_SESSION['error'])): ?>

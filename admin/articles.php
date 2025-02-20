@@ -18,6 +18,7 @@ $result = $mysqli->query($query);
 <head>
     <title>Gestion des Articles - Administration</title>
     <link rel="stylesheet" href="../styles/admin.css">
+    <link rel="icon" type="image/png" href="../images/favicon.png">
 
 </head>
 <body>

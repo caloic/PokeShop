@@ -52,6 +52,7 @@ $commande = $result->fetch_assoc();
 <head>
     <title>Commande validée</title>
     <link rel="stylesheet" href="../styles/cart.css">
+    <link rel="icon" type="image/png" href="../images/favicon.png">
 </head>
 <body>
 <div class="container">

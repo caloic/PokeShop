@@ -87,6 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <title><?php echo $is_edit ? "Modifier" : "Ajouter"; ?> un article - Administration</title>
     <link rel="stylesheet" href="../styles/admin.css">
+    <link rel="icon" type="image/png" href="../images/favicon.png">
+
 </head>
 <body>
 <div class="container">

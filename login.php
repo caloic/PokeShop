@@ -88,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 <head>
     <title>Connexion / Inscription</title>
     <link rel="stylesheet" href="styles/auth.css">
+    <link rel="icon" type="image/png" href="images/favicon.png">
 </head>
 <body>
 <?php if ($error): ?>

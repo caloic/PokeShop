@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <title>Créer un article</title>
     <link rel="stylesheet" href="../styles/product.css">
+    <link rel="icon" type="image/png" href="../images/favicon.png">
 </head>
 <body>
 <div class="container">
