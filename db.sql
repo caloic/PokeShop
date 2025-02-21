@@ -83,6 +83,18 @@ CREATE TABLE factures (
     FOREIGN KEY (commande_id) REFERENCES commandes(id) ON DELETE CASCADE
 );
 
+CREATE TABLE notes_articles (
+                                id INT PRIMARY KEY AUTO_INCREMENT,
+                                user_id INT NOT NULL,
+                                article_id INT NOT NULL,
+                                note INT NOT NULL CHECK (note BETWEEN 1 AND 5),
+                                commentaire TEXT,
+                                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (user_id) REFERENCES users(id),
+                                FOREIGN KEY (article_id) REFERENCES articles(id),
+                                UNIQUE KEY unique_user_article (user_id, article_id)
+);
+
 --Ajout de la colonne user_id dans la table articles
 ALTER TABLE articles ADD COLUMN user_id INT;
 ALTER TABLE articles ADD FOREIGN KEY (user_id) REFERENCES users(id);
