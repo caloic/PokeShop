@@ -56,13 +56,13 @@ $result = $mysqli->query($query);
         <?php while ($user = $result->fetch_assoc()): ?>
             <tr>
                 <td>
-                    <?php if ($user['avatar']): ?>
-                        <img src="<?php echo htmlspecialchars($user['avatar']); ?>"
-                             alt="Avatar"
-                             class="avatar">
-                    <?php else: ?>
-                        <div class="avatar" style="background-color: #ddd;"></div>
-                    <?php endif; ?>
+                    <div class="profile-section">
+    <div class="profile-info">
+        <?php if (!empty($user['avatar'])): ?>
+            <img src="<?php echo '../' . htmlspecialchars($user['avatar']); ?>" alt="Avatar" class="avatar">
+            <?php else: ?>
+            <img src="default-avatar.png" alt="Avatar par défaut" class="avatar">
+        <?php endif; ?>
                 </td>
                 <td><?php echo htmlspecialchars($user['username']); ?></td>
                 <td><?php echo htmlspecialchars($user['email']); ?></td>
