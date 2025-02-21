@@ -203,7 +203,7 @@ $result = $mysqli->query($query);
 
         <?php if ($article['author']): ?>
             <p class="article-author">
-                Par <a href="account.php?id=<?php echo $article['author_id']; ?>">
+                Par <a href="account.php?username=<?php echo urlencode($article['author']); ?>">
                     <?php echo htmlspecialchars($article['author']); ?>
                 </a>
             </p>

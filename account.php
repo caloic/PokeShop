@@ -11,15 +11,34 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Déterminer quel profil afficher
-$profile_id = isset($_GET['id']) ? (int)$_GET['id'] : $_SESSION['user_id'];
-$is_own_profile = $profile_id === $_SESSION['user_id'];
+$profile_username = isset($_GET['username']) ? $_GET['username'] : null;
 
-// Récupérer les informations de l'utilisateur
-$user_query = "SELECT * FROM users WHERE id = ?";
-$stmt = $mysqli->prepare($user_query);
-$stmt->bind_param("i", $profile_id);
-$stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
+if ($profile_username) {
+    // Récupérer les informations de l'utilisateur par son nom d'utilisateur
+    $user_query = "SELECT * FROM users WHERE username = ?";
+    $stmt = $mysqli->prepare($user_query);
+    $stmt->bind_param("s", $profile_username);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if (!$user) {
+        header('Location: index.php');
+        exit();
+    }
+
+    $profile_id = $user['id'];
+    $is_own_profile = $profile_id === $_SESSION['user_id'];
+} else {
+    // Comportement par défaut si aucun nom d'utilisateur n'est fourni
+    $profile_id = isset($_GET['id']) ? (int)$_GET['id'] : $_SESSION['user_id'];
+    $is_own_profile = $profile_id === $_SESSION['user_id'];
+
+    $user_query = "SELECT * FROM users WHERE id = ?";
+    $stmt = $mysqli->prepare($user_query);
+    $stmt->bind_param("i", $profile_id);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+}
 
 if (!$user) {
     header('Location: index.php');
