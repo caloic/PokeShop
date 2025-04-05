@@ -40,6 +40,7 @@ $result = $stmt->get_result();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ma Wishlist - PokéShop</title>
     <link rel="stylesheet" href="styles/wishlist.css">
+    <link rel="stylesheet" href="styles/footer.css">
     <link rel="icon" type="image/png" href="images/favicon.png">
 </head>
 <body>
@@ -186,5 +187,6 @@ $result = $stmt->get_result();
         });
     });
 </script>
+<?php include 'footer.php'; ?>
 </body>
 </html>

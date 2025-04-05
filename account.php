@@ -162,6 +162,7 @@ if ($is_own_profile) {
 <head>
     <title><?php echo $is_own_profile ? "Mon compte" : "Profil de " . htmlspecialchars($user['username']); ?></title>
     <link rel="stylesheet" href="styles/account.css">
+    <link rel="stylesheet" href="styles/footer.css">
     <link rel="icon" type="image/png" href="images/favicon.png">
 </head>
 <body>
@@ -335,4 +336,5 @@ if ($is_own_profile) {
     }
 </script>
 </body>
+<?php include 'footer.php'; ?>
 </html>

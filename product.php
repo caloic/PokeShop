@@ -141,6 +141,7 @@ $average_rating_result = $stmt->get_result()->fetch_assoc();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/product_details.css">
+    <link rel="stylesheet" href="styles/footer.css">
     <link rel="icon" type="image/png" href="images/favicon.png">
 </head>
 <body>
@@ -272,5 +273,6 @@ $average_rating_result = $stmt->get_result()->fetch_assoc();
         <?php endwhile; ?>
     </div>
 </div>
+<?php include 'footer.php'; ?>
 </body>
 </html>
